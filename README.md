@@ -4,16 +4,10 @@ Chrono 4 tours avec affichage meilleur tour
 
 Script test.lua à deplacer dans SCRIPTS/TELEMETRY/
 
+Le chrono s'initialise en même temps que l'ouverture du script sur la radio, ATTENTION le script écrase le chrono 1 de la radio.
+Le script fonctionne actuellement sous le mappage de la QX7, pour les QX9 il faut pour le moment passer par simulateur pour essayer le script
 
-1 --- 
-	PAGE 2
-Timer1 (Inter Armement actif) 00:00
-Name Race
-Persist OFF
-Minute
-Countdown Silent
-
-2 ---
+1 ---
 	PAGE 13
 Screen1 Script test
 
