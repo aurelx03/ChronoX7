@@ -8,12 +8,21 @@ local nbtour = 1
 local buffer = 0
 local score = 0
 
+local function InitUi() --initTimerRACE
+	timer.start = 0
+	timer.value = 0
+	timer.countdownBeep = 0
+	timer.persistent = 0
+	timer.mode = 5 --SAup
+	model.setTimer(0, timer)
+end
+
 local function DrawScreen()
   lcd.clear()
   lcd.drawFilledRectangle(0, 0, LCD_W, verticalCharSpacing)
 end
 
-local function DrawChrono()
+local function DrawChrono() --DrawChonoValue
 			lcd.drawTimer(x+20, y+30, tableau[1], MIDSIZE)
  			lcd.drawTimer(x+20, y+45, tableau[2], MIDSIZE)
  			lcd.drawTimer(x+70, y+30, tableau[3], MIDSIZE)
