@@ -29,8 +29,6 @@ local function DrawChrono() --DrawChonoValue
  			lcd.drawTimer(x+70, y+30, tableau[3], MIDSIZE)
  			lcd.drawTimer(x+70, y+45, tableau[4], MIDSIZE)
  			lcd.drawText(5,10,nbtour)
- 			lcd.drawText(10,10,getValue(89))
-end
 
 local function Chrono()
 local race = model.getTimer(0)
