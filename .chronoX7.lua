@@ -13,7 +13,7 @@ local function InitUi() --initTimerRACE
 	timer.value = 0
 	timer.countdownBeep = 0
 	timer.persistent = 0
-	timer.mode = 5 --SAup
+	timer.mode = 5 --SFup
 	model.setTimer(0, timer)
 end
 
