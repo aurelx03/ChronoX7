@@ -7,6 +7,7 @@ local tableau = {0, 0, 0, 0}
 local nbtour = 1
 local buffer = 0
 local score = 0
+local timer = {}
 
 local function InitUi() --initTimerRACE
 	timer.start = 0
