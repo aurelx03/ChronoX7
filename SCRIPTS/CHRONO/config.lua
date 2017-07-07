@@ -1,323 +1,330 @@
-local f_config = '/SCRIPTS/CHRONO/chrono.cfg'
+-- ----------------------------------------------------
+-- Chronométreur - v 6.6 - 07/07/2017
+-- Aurel Firmware - Nore Fpv - Dom Wilk
+-- ----------------------------------------------------
+local tPage={}
 
--- Ecrans 
-SCREEN_RACE 		= 0
-SCREEN_SETUP 		= 1
-SCREEN_SETUPBACK 	= 2
+local SETUP_RACE
+local SETUP_INTERS
+local v_SetupScreen
 
-local SETUP_RACE	= 3
-local SETUP_INTERS	= 4
+local t_switches
 
-local v_SetupScreen = SETUP_RACE
-local v_edit = false
-
-
-local	t_fields_race  = { [1] = {field ="nb_tours", 		lx= 2, ly=12, text="Nb tours", 	dx= 50, dy=12, type="n+", 		stop=20, 	hint = "..."},
-					 	   [2] = {field ="delay",			lx=70, ly=12, text="Delai", 	dx= 95, dy=12, type="n+", 		stop=60, 	hint = "delai entre 2 validations"},
-						   [3] = {field ="seuil",			lx= 2, ly=22, text="Seuil RSSI",dx= 50, dy=22, type="n+", 		stop=100, 	hint = "seuil validation"},
-						   [4] = {field ="start_throttle", 	lx= 2, ly=32, text="Seuil gaz", dx= 50, dy=32, type="sw_pos", 	stop="thr",	hint = "decollage du quad"},
-						   [5] = {field ="start_mode",		lx= 2, ly=42, text="Depart", 	dx= 50, dy=42, type="n-", 		stop=-1, 	hint = "au decollage / 1er passage"}
-						 }
-
-local	t_fields_inters = { [1] = {field ="sw_Arm", 		lx= 2, ly=12, text="Armement", 	 dx= 55, dy=12, type="sw_name", stop=0, 			hint = "inter Armement"},
-					 	    [2] = {field ="sw_Arm_Off",		lx=80, ly=12, text="Off", 		 dx=105, dy=12, type="sw_pos",  stop="fieldprec", 	hint = "Position Desarmee"},
-						    [3] = {field ="sw_Lap" ,		lx= 2, ly=22, text="Valid tour", dx= 55, dy=22, type="sw_name", stop=0, 			hint = "Valid tour manuel"},
-						    [4] = {field ="sw_Lap_ls_num", 	lx=80, ly=22, text="RSSI",  	 dx=105, dy=22, type="n+", 		stop=10, 			hint = "inter logique RSSI "},
-						    [5] = {field ="sw_Reset",		lx= 2, ly=32, text="Reset", 	 dx= 55, dy=32, type="sw_name", stop=0, 			hint = "inter de R.A.Z du chrono"},
-						    [6] = {field ="sw_Reset_On",	lx=80, ly=32, text="On", 	 	 dx=105, dy=32, type="sw_pos", 	stop="fieldprec", 	hint = "Position RAZ"},
-						    [7] = {field ="sw_Test",		lx= 2, ly=42, text="Test", 		 dx= 55, dy=42, type="sw_name", stop=0, 			hint = "Tester le seuil RSSI"},
-						    [8] = {field ="sw_Test_On",		lx=80, ly=42, text="On", 		 dx=105, dy=42, type="sw_pos",  stop="fieldprec", 	hint = "Position TEST"}
-						  }
-
-local t_switches = { ["sa"] = 0,
- 					 ["sb"] = 0,
- 					 ["sc"] = 0,
- 					 ["sd"] = 0,
- 					 ["se"] = 0,
- 					 ["sf"] = 0,
- 					 ["sg"] = 0,
- 					 ["sh"] = 0
- 				  }
-
-local v_current_fields = t_fields_race	-- tabelau des champs à afficher
-local v_focused_field = 0				-- n° du champ ayant le focus
-
--- -----------------------------------------------------------------------------
--- Selon la radio, les commandes "+" et "-" ne sont pas identiques
--- renvoi l'incrément
--- -----------------------------------------------------------------------------
-function Button_GetMove(aEvent)
-	v_Move = 0
-	if (aEvent == EVT_PLUS_BREAK  and i_IsX9D) or (aEvent == EVT_ROT_RIGHT  and not i_IsX9D) 	then v_Move =  1 	end
-	if (aEvent == EVT_MINUS_BREAK and i_IsX9D) or (aEvent == EVT_ROT_LEFT and not i_IsX9D) 	then v_Move = -1	end	
-	return v_Move
-end
-
--- -----------------------------------------------------------------------------
--- Lecture du fichier de config 
--- renvoi 
---	* le tableau des valeurs enregistrées dans le fichier de config
---  * "nil" si fichier vide ou impossibilité 
--- -----------------------------------------------------------------------------
-function config_read(aFields)
-
-	-- ouverture en "append" > création si inexistant
-	local f = io.open(f_config, 'a')
-	if f ~= nil then
-		io.close(f)
-	end
-
-	-- echec ouverture fichier
-	f = io.open(f_config, 'r')
-	if f == nil then
-		return false
-	end
-	
-	local v_params = io.read(f, 1024)
-	io.close(f)
-	
-	-- fichier vide
-	if v_params == '' then
-		return false
-	end
-
-	for v_pair in string.gmatch(v_params, '([^\n]+)') do
-		v_key = string.sub(v_pair,1,string.find(v_pair, ":")-1)
-		v_val = string.sub(v_pair,string.find(v_pair, ":")+1)
-		aFields[v_key] = v_val
-	end
-	return true
-end
+local v_edit
+local v_titre
+local v_focused_field
 
 
--- -----------------------------------------------------------------------------
--- Ecriture des params de config
--- -----------------------------------------------------------------------------
-function config_write(aFields)
 
-	local f = io.open(f_config, 'w')
+-- ----------------------------------------------------------------------------------------------------------
+tPage.scan_switches = function(aStop)
 
-	for k, v in pairs(aFields) do
-		s = k .. ":" .. tostring(v) .. "\n"
-		io.write(f, s)
-	end
-	io.close(f)
-end
+	local key, val, i
 
--- -----------------------------------------------------------------------------
--- scan_switches
--- -----------------------------------------------------------------------------
--- lit la valuer de tous les inters 
--- si "aStop" = true, renvoit l'inter dont la valeur a changée
--- -----------------------------------------------------------------------------
-local function scan_switches(aStop)
 	for key, val in pairs(t_switches) do
-		i = getValue(key)
+		local i = getValue(key)
 		if val~=i then 
 			t_switches[key] = i 
-			if aStop then return key end	
+			if aStop then return key end
 		end
 	end
 	return nil
 end
 
--- -----------------------------------------------------------------------------
--- field_draw
--- -----------------------------------------------------------------------------
-local function fields_draw(aFieldsCoord, aFieldsList)
+-- ----------------------------------------------------------------------------------------------------------
+tPage.fields_draw = function(aFieldsCoord)
 
 	lcd.drawFilledRectangle(1, 10, LCD_W, 63,ERASE)
+
+	local key, tab
 			
 	for key, tab in pairs(aFieldsCoord) do
 		
-		v_attr_text = SMLSIZE
-		v_attr_data = SMLSIZE
+		local v_attr_text = SMLSIZE
+		local v_attr_data = SMLSIZE
 		
-		-- Le champ actif
-		if tab.field == aFieldsCoord[v_focused_field].field then 
+		if tab.field == aFieldsCoord[v_focused_field].field then
 
 			-- en édtion ?
-		  	if v_edit then 
-		  		v_attr_data = v_attr_data + BLINK
-		  		v_attr_text = v_attr_text + INVERS
-		  		lcd.drawFilledRectangle(tab.lx, tab.ly-2, tab.dx-tab.lx-2, 11,SOLID)
-			else 
+			if v_edit then
+				v_attr_data = v_attr_data + BLINK
+				v_attr_text = v_attr_text + INVERS
+				lcd.drawFilledRectangle(tab.lx, tab.ly-2, tab.dx-tab.lx-2, 11,SOLID)
+			else
 				v_attr_data = v_attr_data + INVERS
-		  	end
+			end
 
-		  	-- dessin de l'aide
-		  	lcd.drawFilledRectangle(1, 53, LCD_W, 63,SOLID)
-			lcd.drawText(1, 54,  tab.hint, SMLSIZE + INVERS) 
-		end 	
+			-- dessin de l'aide
+			lcd.drawFilledRectangle(1, 53, LCD_W, 63,SOLID)
+			lcd.drawText(1, 54,  tab.hint, SMLSIZE + INVERS)
+		end
 
 		-- Mise en forme ou Exceptions
-		v_text = tab.text
-		v_data = aFieldsList[tab.field]
+		local v_text = tab.text
+		local v_data = string.sub(tab.type,1,1) == "n" and tonumber(t_Params[tab.field]) or t_Params[tab.field]
 		
-		if tab.field =="delay" 		 	then v_data = tostring(v_data) .. "sec"	end
-		if tab.field =="start_mode" 	then 
-			if v_data == 0 
-				then v_data = "arrete"
-				else v_data = "lance"
-			end	
-		end
-		
-		if tab.field =="sw_Lap_ls_num" then 
-			if i_IsX9D 	then v_data = "LS"..tostring(v_data+1) 	
-						else v_data = "LO"..tostring(v_data+1) 		
-			end
-		elseif 
-			tab.type =="sw_name"  then v_data = string.upper(v_data)
+		if 		tab.field =="delay" 		 			then v_data = string.format("%isec",v_data)
+		elseif 	tab.field =="start_mode" 				then v_data = (v_data == 0 and "arrete" or "lance")
+		elseif 	tab.field =="start_top" 				then v_data = (v_data == 0 and "non"    or "oui")
+		elseif 	tab.field =="seuil" and v_data == 100	then v_data = "Off" 
+		elseif 	tab.field =="sw_Lap_ls_num" 			then v_data = string.format((i_IsX9D and "LS%i" or "LO%i"),v_data+1)
+		elseif 	tab.type  =="sw_name"  					then v_data = string.upper(v_data)
 		end		
-		-- affichage
-		lcd.drawText(tab.lx, tab.ly, v_text, 	v_attr_text) 		
-		lcd.drawText(tab.dx, tab.dy, v_data,	v_attr_data) 
+
+		lcd.drawText(tab.lx, tab.ly, v_text, 	v_attr_text)
+		lcd.drawText(tab.dx, tab.dy, v_data,	v_attr_data)
 
 	end
+
+	return 0
 end
 
--- -----------------------------------------
--- Attente manip utilisateur
--- -----------------------------------------
-local function field_draw_wait(aL1,aL2)
+-- ----------------------------------------------------------------------------------------------------------
+tPage.field_draw_wait = function(aL1,aL2)
 
-	xh = (LCD_W/2)-50
-	yh = 15
-	xb = 87
-	yb = 30
+	local xh = (LCD_W/2)-50
+	local yh = 15
+	local xb = 87
+	local yb = 30
 	
 	lcd.drawFilledRectangle  (xh, yh, xb+1, yb+1,ERASE)
 	lcd.drawRectangle        (xh, yh, xb, yb, GREY_DEFAULT)
 	
 	lcd.drawText(xh +  5, 21, aL1, SMLSIZE+BLINK)
 	lcd.drawText(xh + 18, 30, aL2, SMLSIZE+BLINK)
+
+	return 0
 end
 
+-- ----------------------------------------------------------------------------------------------------------
+tPage.loadFields = function(aPageIdx)
 
--- -----------------------------------------
--- Ecran de config
--- -----------------------------------------
-function config_screen(aEvent,aFields) 
+	v_focused_field  = 0
+	clearTable(t_fields) -- fait gagner entre 4 & 5 ko !!		
+	-- type : n+  valeur entière positive
+	--			° quand arrive au "stop" repart de 0, sinon reste en butée
 
-	-- Sauvegarde et Retour à l'écran "Race"
-	if aEvent == EVT_EXIT_BREAK then 
-		v_edit = false
-		config_write(aFields)
-		v_currentScreen = SCREEN_SETUPBACK 
-		return
+	if aPageIdx == SETUP_RACE
+	then  
+		t_fields = {
+			[1]={field ="nb_tours",			lx= 2, ly=12, text="Nb tours", 	dx= 50, dy=12, type="n+°",		stop=20,	hint = "..."},
+			[2]={field ="delay",			lx=70, ly=12, text="Delai", 	dx= 95, dy=12, type="n+°",		stop=60,	hint = "delai entre 2 validations"},
+			[3]={field ="seuil",			lx= 2, ly=22, text="Seuil RSSI",dx= 50, dy=22, type="n+",		stop=100,	hint = "seuil validation"},
+			[4]={field ="start_throttle", 	lx= 2, ly=32, text="Seuil gaz", dx= 50, dy=32, type="sw_pos",	stop="thr",	hint = "decollage du quad"},
+			[5]={field ="start_mode",		lx= 2, ly=42, text="Depart", 	dx= 40, dy=42, type="n-",		stop=-1,	hint = "au decollage / 1er passage"},
+			[6]={field ="start_top",		lx=77, ly=42, text="Top", 		dx= 98, dy=42, type="n+°",		stop=1,		hint = "donner le top depart"}
+		}
+
+		return "Chronometre - CONFIG RACE"
 	end
 
-	-- Arrivée sur ecran de config
-	if v_currentScreen ~= SCREEN_SETUP then
-		
-		v_currentScreen = SCREEN_SETUP
+	if aPageIdx == SETUP_INTERS
+	then  
+		t_fields = { 
+			[1] = {field ="sw_Arm", 		lx= 2, ly=12, text="Armement",	dx= 55, dy=12, type="sw_name", stop=0, 				hint = "inter Armement"},
+			[2] = {field ="sw_Arm_Off",		lx=80, ly=12, text="Off", 		dx=100, dy=12, type="sw_pos",  stop="fieldprec", 	hint = "Position Desarmee"},
+			[3] = {field ="sw_Lap" ,		lx= 2, ly=22, text="Valid tour",dx= 55, dy=22, type="sw_name", stop=0, 				hint = "Valid tour manuel"},
+			[4] = {field ="sw_Lap_ls_num", 	lx=80, ly=22, text="RSSI",  	dx=105, dy=22, type="n+°", 		stop=10, 			hint = "inter logique RSSI "},
+			[5] = {field ="sw_Reset",		lx= 2, ly=32, text="Reset", 	dx= 55, dy=32, type="sw_name", stop=0, 				hint = "inter de R.A.Z du chrono"},
+			[6] = {field ="sw_Reset_On",	lx=80, ly=32, text="On", 	 	dx=105, dy=32, type="sw_pos", 	stop="fieldprec", 	hint = "Position RAZ"},
+			[7] = {field ="sw_Test",		lx= 2, ly=42, text="Test", 		dx= 55, dy=42, type="sw_name", stop=0, 				hint = "Tester le seuil RSSI"},
+			[8] = {field ="sw_Test_On",		lx=80, ly=42, text="On", 		dx=105, dy=42, type="sw_pos",  stop="fieldprec", 	hint = "Position TEST"}
+		}
+
+		return "Chronometre - CONFIG INTERS"
+	end
+end
+-- ----------------------------------------------------------------------------------------------------------
+tPage.init = function()
+
+	t_switches = {
+				["sa"] = 0,
+				["sb"] = 0,
+				["sc"] = 0,
+				["sd"] = 0,
+				["se"] = 0,
+				["sf"] = 0,
+				["sg"] = 0,
+				["sh"] = 0
+			}	
+
+	p_Tools.Params_Load()
+	v_titre = tPage.loadFields(SETUP_RACE)
+	
+	SETUP_RACE		= 1
+	SETUP_INTERS	= 2
+
+	v_SetupScreen 	= 1
+	v_edit 			= false
+
+	return 0
+
+end
+
+-- ----------------------------------------------------------------------------------------------------------
+tPage.Stop = function()
+	clearTable(t_fields)
+	clearTable(t_switches)
+	clearTable(t_Params)
+end
+
+-- ----------------------------------------------------------------------------------------------------------
+tPage.run = function (aEvent)
+
+	-- Exit > Sauvegarde et Retour à l'écran "Race"
+	if aEvent == EVT_EXIT_BREAK then
+		if v_Edit then 
+			aEvent =EVT_MENU_BREAK
+		else
+			p_Tools.config_write(t_Params)
+			tPage.Stop()
+			return -1
+		end
+	end
+
+	local v_drawFields = false
+	
+	-- Menu => Page config suivante 
+	if aEvent == EVT_MENU_BREAK then
+		v_SetupScreen =  v_SetupScreen +1 > SETUP_INTERS and 1 or v_SetupScreen + 1
+		v_titre = tPage.loadFields(v_SetupScreen)
 		v_focused_field = 0
-
-	-- ou faire défiler les menus
-	elseif aEvent == EVT_MENU_BREAK then 
-		 v_SetupScreen =  v_SetupScreen + 1
-		 if v_SetupScreen > SETUP_INTERS then  v_SetupScreen = 0 end 
-		 v_focused_field = 0
 	end
 
-	-- Config Course
-	if v_SetupScreen == SETUP_RACE then
-  		v_titre = "Chronometre - CONFIG RACE"
-		v_current_fields = t_fields_race
-	end
-
-	-- Config Inters
-	if v_SetupScreen == SETUP_INTERS then
-  		v_titre = "Chronometre - CONFIG INTERS"
-		v_current_fields = t_fields_inters
-	end
-
-
-	-- Titre et champs actif sur arrivée page Race ou Inters
-	if v_focused_field ==0 then 
-		
-		-- Dessin Titre
+	-- Dessin nouvelle page
+	if v_focused_field == 0 then
 		lcd.drawFilledRectangle(0, 0, LCD_W, 63,ERASE)
 		lcd.drawFilledRectangle(0, 0, LCD_W, 9,SOLID)
 		lcd.drawText(1,1,v_titre,SMLSIZE+INVERS)
-
-		-- champ actif
-		v_focused_field = 1 
+		v_focused_field = 1
+		v_drawFields = true
 	end
 
-	-- Validation saisie ou entrée en saisie
-	if aEvent == EVT_ENTER_BREAK then 
+	-- Enter > Edition / Validation
+	if aEvent == EVT_ENTER_BREAK then
 		
-		v_edit = not v_edit 
+		v_edit = not v_edit
 		
-		if v_edit and v_current_fields[v_focused_field].type == "sw_name" 
-		then 
-			scan_switches(false) 
-			field_draw_wait("manipulez l'inter","a affecter") 
-		end	
+		-- Edition Inter
+		if v_edit and t_fields[v_focused_field].type == "sw_name" then
+			tPage.scan_switches(false)
 
-		-- Capture de la position 
-		if v_current_fields[v_focused_field].type == "sw_pos" 
-		then 
-			if v_edit then 
-				field_draw_wait("inter en position","puis [ENT]") 
-			else
-				if v_current_fields[v_focused_field].stop == "fieldprec"
-					then i = getValue(aFields[v_current_fields[v_focused_field-1].field])
-					else i = getValue(v_current_fields[v_focused_field].stop)
+		-- Edition Position Inter
+		elseif t_fields[v_focused_field].type == "sw_pos" then
+
+			if not v_edit then
+				if t_fields[v_focused_field].stop == "fieldprec"
+					then i = getValue(t_Params[t_fields[v_focused_field-1].field])
+					else i = getValue(t_fields[v_focused_field].stop)
 				end
-				aFields[v_current_fields[v_focused_field].field] = i
+				t_Params[t_fields[v_focused_field].field] = i
+				i = nil
 			end
-		end	
-		
-		return
-	end
-
-	-- cas particulier détection  de switch
-	if v_edit then  
-		if v_current_fields[v_focused_field].type == "sw_name" then 
-			sw_name = scan_switches(true)
-			if sw_name ~= nil then
-				aFields[v_current_fields[v_focused_field].field] = sw_name
-				v_edit = false
-			else 
-				field_draw_wait("manipulez l'inter","a affecter") 
-				return
-			end
-		elseif v_current_fields[v_focused_field].type == "sw_pos" then 
-			field_draw_wait("inter en position","puis [ENT]") 
-			return
 		end
+		v_drawFields = true
 	end
 
-	
+	if v_edit then
+		
+		if t_fields[v_focused_field].type == "sw_name" then
 
-	v_Move = Button_GetMove(aEvent)
- 		
+			-- un inter a bougé ?
+			sw_name = tPage.scan_switches(true)
+			if sw_name ~= nil then
+				t_Params[t_fields[v_focused_field].field] = sw_name
+				v_edit = false
+			else
+				tPage.field_draw_wait("manipulez l'inter","a affecter")
+				return 0 -- on ne redessine pas les champs
+			end
+		
+		elseif t_fields[v_focused_field].type == "sw_pos" then
+			tPage.field_draw_wait("inter en position","puis [ENT]") 
+			return 0 -- on ne redessine pas les champs
+		end
+
+		v_drawFields = true -- on dessine les champs (clignotant en édition)
+	end
+
+	-- Bouton "+" et "-"
+	local v_Move = p_Tools.Button_GetMove(aEvent)
+
 	if v_Move ~= 0 then
 
-		-- déplacement de champ à champ
-		if not v_edit then 
-			v_focused_field = v_focused_field + v_Move																				-- bouge de 1 vers le haut ou le bas 
-			if  v_focused_field == 0 then for key, tab in pairs(v_current_fields) do v_focused_field = v_focused_field +1 end end	-- début atteint, on passe au dernier
-			if v_current_fields[v_focused_field] == nil then v_focused_field = 1 end										    	-- fin atteinte, on passe au premier
-		
-		-- incrémente décrménente valeur
-		else
-			i =aFields[v_current_fields[v_focused_field].field] + v_Move
-			-- surveillance des bornes
-			if v_current_fields[v_focused_field].type == "n+"  and i<0 													then i=v_current_fields[v_focused_field].stop 	end
-			if v_current_fields[v_focused_field].type == "n+"  and i>v_current_fields[v_focused_field].stop 			then i=0										end
-			if v_current_fields[v_focused_field].type == "n-"  and i>0													then i=v_current_fields[v_focused_field].stop	end
-			if v_current_fields[v_focused_field].type == "n-"  and i<v_current_fields[v_focused_field].stop 			then i=0										end
-			if v_current_fields[v_focused_field].type == "num" and math.abs(i)>v_current_fields[v_focused_field].stop 	then i=(i*-1)									end
+		local i, key, tab
 
-			aFields[v_current_fields[v_focused_field].field] = i
+		-- Champ suivant ou précédent
+		if not v_edit then
+
+			v_focused_field = v_focused_field + v_Move
+			
+			if  v_focused_field == 0 then 
+				for key, tab in pairs(t_fields) do 
+					v_focused_field = v_focused_field +1 
+				end 
+			end
+			
+			if t_fields[v_focused_field] == nil then v_focused_field = 1 end
+
+		-- incrément valeur éditée
+		else
+
+			local i =t_Params[t_fields[v_focused_field].field] + v_Move
+
+			if t_fields[v_focused_field].type == "n+"  and i<0 											then i=0 										end
+			if t_fields[v_focused_field].type == "n+"  and i>t_fields[v_focused_field].stop 			then i=t_fields[v_focused_field].stop			end
+
+			if t_fields[v_focused_field].type == "n+°" and i<0 											then i=t_fields[v_focused_field].stop 			end
+			if t_fields[v_focused_field].type == "n+°" and i>t_fields[v_focused_field].stop 			then i=0										end
+			
+			if t_fields[v_focused_field].type == "n-"  and i>0											then i=t_fields[v_focused_field].stop			end
+			if t_fields[v_focused_field].type == "n-"  and i<t_fields[v_focused_field].stop 			then i=0										end
+			
+			if t_fields[v_focused_field].type == "num" and math.abs(i)>t_fields[v_focused_field].stop 	then i=(i*-1)									end
+
+			t_Params[t_fields[v_focused_field].field] = i
 		end
 
-	end
-	-- Dessin titre des champs
-	fields_draw(v_current_fields,aFields)
+		v_drawFields = true -- on dessine les champs (changement de focus)
 
-	
+	end
+
+	if v_drawFields then tPage.fields_draw(t_fields) end
+
+	return 0
 end
+
+
+
+return tPage
+--[[
+function loadFile010(aFile)
+
+	local f = io.open(aFile, 'a')
+	if f ~= nil then io.close(f) end
+
+	f = io.open(aFile, 'r')
+	if f == nil then return "" end
+	
+	local v_img = io.read(f, 255)
+	io.close(f)
+	
+	return v_img
+end
+
+function drawFile010(aFileLoaded,aX,aY)
+
+	local vX = aX
+	local vY = aY
+	local vline, i
+
+	for v_line in string.gmatch(aFileLoaded, '([^\n]+)') do
+		for i=1, #v_line do
+			if string.byte(v_line,i)==49 then lcd.drawPoint(vX,vY) end
+			vX = vX + 1
+		end
+		vY = vY+1
+		vX = aX	
+	end
+end
+--]]
