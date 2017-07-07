@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------------------------------------------------------------------------
-CHRONOMETREUR - v 5.0 - 30/06/2017
+CHRONOMETREUR - v 6.6 - 01/07/2017
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 Ecrit et imaginé par : Aurel Firmware - Nore Fpv - Dom Wilk
 ------------------------------------------------------------------------------------------------------------------------------------------------
@@ -9,8 +9,8 @@ INSTALLATION :
 ------------------------------------------------------------------------------------------------------------------------------------------------
 1. Sur la SD card de votre radio :
    a. "timer.lua" à déposer dans "\SCRIPTS\TELEMETRY\"
-   b. "config.lua" à déposer dans "\SCRIPTS\CHRONO\"
-   c. "Cstart.wav,Cfin.wav,Cbest.wav" à déposer dans "\SOUNDS\fr"
+   b. "race.lua", "config.lua" et "tools.lua" à déposer dans "\SCRIPTS\CHRONO\"
+   c. "Cstart.wav", "Cfin.wav" ,"Cbest.wav" et "CtopCD.wav" à déposer dans "\SOUNDS\fr"
    
 2. Script "timer" à lier à un écran de télémesure
 
@@ -62,7 +62,7 @@ Plus vous serez régulier et plus le "délai" sera efficace, puisque en mettant 
 
 - Le mode test est engagé par un inter configurabale dans les paramètres (choix de l'inter et position)
 - Le délai est paramétrable dans l'écran de configuration "Race"
-- Le seuil RSSI est réglable dans les paramètres ET en dynamique par [+] ou [-] (X9D) ou la molette (QX7) dans certeins conditions (mode TEST, Avant course)
+- Le seuil RSSI est réglable dans les paramètres ET en dynamique par [+] ou [-] (X9D) ou la molette (QX7) dans certaines conditions (mode TEST, Avant course)
 
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -82,7 +82,7 @@ Le seuil RSSI reste réglable par [+] ou [-] (X9D) ou la molette (QX7)
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 > APRES COURSE
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Si vous avez paramétré un nombre de tours supérieur à 4, une fois désarmé, vous pouvez naviguer dans le tabelau des temps avec la molette (QX7) 
+Si vous avez paramétré un nombre de tours supérieur à 4, une fois désarmé, vous pouvez naviguer dans le tableau des temps avec la molette (QX7) 
 ou les touches "+" et "-" (X9D)
 Le seuil RSSI n'est plus réglable par [+] ou [-] (X9D) ou la molette (QX7) tant que vous n'aurez pas RAZ le tableau des temps
 Utilisez l'inter de Reset pour remettre le chrono et les temps à zéro
@@ -91,7 +91,7 @@ Utilisez l'inter de Reset pour remettre le chrono et les temps à zéro
 
 ------------------------------------------------------------------------------------------------------------------------------------------------
 PARAMETRES
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+------------------------------------------------------------------------------------------------------------------------------------------------
 D'une manière générale, vous vous déplacez sur les différents paramètres avec les touches "+" et "-" de la radio (ou de la molette pour la QX7)
 Pour éditer le paramètre appuyez sur la touche [ENT]
 Le script s'adapte en fonction de ce qu'il y a renseigner : 
@@ -132,6 +132,8 @@ Valeur au delà de laquelle l'inter logique du RSSI provoquera la validation du 
 Vous pouvez ajuster le seuil dans les écrans de config, mais aussi en Mode TEST ou avant et pendant la course, il n'y a que lorsqu'il y a des temps 
 à consulter que le molette ou les touches [+] et [-] ne modifient pas le seuil. 
 
+Désactiver la validation RSSI :  monter le seuil à 100 => "Off" est affiché sur les écrans de race et de config pour signifier la désactivation 
+
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 SEUIL GAZ (ou seuil de décollage)                     [ENT] puis levez le manche jusqu'à la position où le décollage est valide puis [ENT]
@@ -146,8 +148,15 @@ MODES de DEPART	                                    [ENT] puis molette (QX7) ou 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Départ lancé ou arrêté, le chrono démarre 
 	* arrêté = dès que le manche des gaz est levé 
-	* lancé  = dès que vous franchissez une première fois le point de validation, des bips signal l'attente du point de passage
+	* lancé  = dès que vous franchissez une première fois le point de validation, des bips signalent l'attente du point de passage
 
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+TOP (de DEPART)                                     [ENT] puis molette (QX7) ou touche +/- (X9D) puis [ENT]
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Oui/Non
+sur tous les courreurs, un se positionne en "Oui" pour jouer la séquence de bips départ dès qu'il arme.
+Le fichier nous a été fourni par ChronoDrone, vous reconnaitrez leurs bips, merci Adrien !
 
 ------------------------------------------------------------------------------------------------------------------------------------------------
 PARAMETRES "INTERS"
@@ -163,7 +172,7 @@ le choisir.
 
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-OFF (ARMEMENT) 									    [ENT] puis positionnez l'inter en mode désarmé puis [ENT]
+OFF (ARMEMENT) 									                    [ENT] puis positionnez l'inter en mode désarmé puis [ENT]
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 La plupart du temps cette valeur est "-1024" mais selon la configuration de votre radio, si l'inter est à 3 ou 2 positions ... bref, le mieux est
 d'éditer le paramètre de mettre l'inter dans sa position "Off" et de refaire [ENT] pour que le paramètre capture cette valeur 
@@ -181,7 +190,7 @@ Mais comme on est bpc à n'être pas bon à ce point, on a essayé de faire un t
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 RSSI (Inter logique de détection du)                [ENT] puis molette (QX7) ou touche +/- (X9D) puis [ENT]
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Au point 3 de l'installation, nous vous présentions les paramètres de réglages d'un inter logique sur la force du signal RSSI
+Au point "3" de l'installation, nous vous présentions les paramètres de réglages d'un inter logique sur la force du signal RSSI
 vous devez reporter le nom de cet inter logique dans ce paramètre
 
 
@@ -237,18 +246,59 @@ Pack Fr pour taranis : https://www.dropbox.com/s/5dvplq1i1fjwak8/Fr_sound_pack_2
 BUGS & AMELIORATIONS
 ------------------------------------------------------------------------------------------------------------------------------------------------
 - - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Quand on lève un manche, faire afficher la valeur au fur et à mesure
+Double seuil RSSI
+  Seuil haut = prise en compte lorsqu'on dépasse le seuil par le haut
+  Seuil bas  = prise en compte lorsqu'on franchit le seuil par le bas
+  Dire lequel valide le tour : celui qui ne valide pas doit être franchit en premier. 
+Par exemple, je choisi le seuil bas comme seuil de validation
+  - tant que le seuil haut n'est pas detecté, je ne peux valider le tour
+  - une fois détecté, j'attends que le seuil bas soit franchit pour valider
 - - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Message "Inter en position" pour le réglage du "Seuil Gaz" 
-> "Montez le stick à la valeur de décollage"
+
 ------------------------------------------------------------------------------------------------------------------------------------------------
-Historique : 
+HISTORIQUE
+- - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+6.6 : Retouches QX7
+      Fichier specifique pour QX7 "logoCD.QX7"
+- - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+6.5 : Validation RSSI Off : monter le seuil à 100 
+                            indication visuelle "Off" sur écran race et sur écran config
+      Top oui/non plutot que 1/0 + repositionnement des options
+      Redessine les champs en sortie d'édtion
+      Logo Chronodrone
+- - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+6.4 : retouche QX7 par Dom
+- - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+6.3 : splash-screen de reset : Petit bug résolu sur affichage
+                               Remonté le laps d'affichage de 20 à 30 
+      réactivation des textes d'info sur les pages de config
+      recentrage de la ligne de titre (race.lua ligne 157 : "(i_IsX9D and 67 or 40)"" jouer sur le "40" pour centrer et me donner la valeur 
+      pour que je la mette dans le source avant qu'on ne la perde ;) 
+- - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+6.2 : Ecrans de Config : Petit bug résolu sur choix inter et attente position 
+- - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+6.1 : Les pages sont désormais compilées elles aussi par la radio, on est maintenant full luac ! résultat, on passe de 28ko à 20ko en standby 
+        sur la page du chrono
+      Test divers et variés et petites retouches de code (encore un peu de mémoire à gratter sur les pics), on est stable, aucun leak
+        et pics à 47Ko max sur la radio.  
+      Suppression des textes d'aide sur les options de config pour grignotter un peu plus de mémoire
+- - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+6.0 : Refonte complète pour optimisation de la gestion de la mémoire
+      Le moteur ne fait que charger et décharger les modules en fonction du besoin 
+      La charge mémoire est réduite au minimum lorsqu'on va sur un autre script
+      Le probème est l'occupation mémoire des autres scripts qui ne laisseront plus la place au chrono
+- - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+5.3 : Bug résolu : bascule d'un écran de config à l'autre un peu laborieux
+      Vérification expansion mémoire = stable, varie entre 41 et 47 KB, 41 KB au "repos"
+- - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+5.2 : Bug résolu sur absence du capteur RSSI, affiche "OFF" si pas de capteur 
+      Parametre "Top Départ" : son à l'armement pour lancer une séquence de bip pour donner le départ aux copains
 - - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 5.1 : Bug sur BetsLap : ne prenait que les 4 premiers tous
 	  Affichage "RESET" en gros sur tout l'écran ... si pas "SH" trop béta de laisser l'inter en position "RESET"	
 	  nommenclature des variables pour les fichiers sons revue "snd_xxxxxxx", "sfile" renommé en "snd_start" 
 	  Son quand meilleur temps "snd_best"
-	  pour éviter de reparamétrer les fichier sons à cahque nouvelle version, possibilité de les modifier dans "chrono.cfg" 
+	  pour éviter de reparamétrer les fichier sons à chaque nouvelle version, possibilité de les modifier dans "chrono.cfg" 
 - - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 5.0 : Seuil RSSI : se règle désormais dans les paramètres "RACE"
 				   MAIS s'ajuste aussi en dynamique 
